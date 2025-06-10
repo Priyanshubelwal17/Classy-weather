@@ -34,15 +34,17 @@ function formatDay(dateStr) {
 
 class App extends React.Component {
   state = {
-    location: "delhi",
+    location: "",
     isLoading: false,
     displayLocation: "",
     weather: {},
   };
 
   fetchWeather = async () => {
-    this.setState({ isLoading: true });
+    if (this.state.location.length < 2) return this.setState({ weather: {} });
+
     try {
+      this.setState({ isLoading: true });
       // 1) Getting location (geocoding)
       const geoRes = await fetch(
         `https://geocoding-api.open-meteo.com/v1/search?name=${this.state.location}`
@@ -65,12 +67,27 @@ class App extends React.Component {
       const weatherData = await weatherRes.json();
       this.setState({ weather: weatherData.daily });
     } catch (err) {
-      console.log(err);
+      console.error(err);
     } finally {
-      this.setState({ isLoading: true });
+      this.setState({ isLoading: false });
     }
   };
+
   setLocation = (e) => this.setState({ location: e.target.value });
+
+  // useEffect []
+  componentDidMount() {
+    // this.fetchWeather();
+    this.setState({ location: localStorage.getItem("location") || "" });
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.location !== prevState.location) {
+      this.fetchWeather();
+
+      localStorage.setItem("location", this.state.location);
+    }
+  }
 
   render() {
     return (
@@ -138,6 +155,9 @@ class Weather extends React.Component {
 }
 
 class Day extends React.Component {
+  componentWillUnmount() {
+    console.log("Weather will unamount");
+  }
   render() {
     const { date, max, min, code, isToday } = this.props;
     return (
